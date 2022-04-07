@@ -14,8 +14,65 @@ const codecOptions=[
 "-bufsize", "0",
 	"-rtbufsize", "1000k",
 ];
-//这里需要做跨平台的处理, 不同的情况需要不同的选项
-
+//跨平台的处理
+//这里的键 的定义方法
+//第一层的键 : aix darwin freebsd linux openbsd sunos win32 android 这里的键 是process.platform 的可选值, 支持一种系统加一个键
+//第二层的键 : camera screen1 screen2 现在只支持一个摄像头两个屏幕,  更多屏幕的情况还没有考虑, 目前使用ffmpeg推流需要计算像素的偏移
+//    		   来定位到屏幕 有一些复杂情况没有考虑, 比如第一个屏幕1024分辨率, 第二个1920分辨率, 第三个屏幕3840分辨率...., 这个可能需要
+//    		   通过计算来定位
+const allOptions= {
+	"win32":{
+		"camera":[
+			"-f", "dshow",
+			"-framerate", "15",
+			"-s", "1280x720",
+			//这个需要使用探测到的设备
+			"-i", "Chinoy USB2.0 Camera",
+		],
+		"screen1":[
+			"-f", "gdigrab",
+			"-framerate", "5",
+			"-s", "1920x1080",
+			"-i", "desktop",
+		],
+		"screen2":[
+			"-f", "gdigrab",
+			"-framerate", "5",
+			"-s", "1920x1080",
+			"-i", "desktop",
+			"-offset_x", "1920",
+		]
+	},
+	//TODO
+	"darwin":{
+		"camera":[],
+		"screen1":[],
+		"screen2":[]
+	},
+	
+	"linux":{
+		"camera":[
+			"-f", "v4l2",
+			"-framerate", "15",
+			"-s", "1280x720",
+			"-i", "/dev/video0",
+		],
+		"screen1":[
+			"-f", "x11grab",
+			"-framerate", "5",
+			"-s", "1920x1080",
+			"-i", ":0.0",
+		],
+		"screen2":[
+			"-f", "x11grab",
+			"-framerate", "5",
+			"-s", "1920x1080",
+			"-i", ":0.0+1920,0",
+		]
+	}
+	
+};
+/*
 //video
 const inputOptions1=[
 	"-f", "v4l2",
@@ -37,6 +94,8 @@ const inputOptions3=[
 	"-s", "1920x1080",
 	"-i", ":0.0+1920,0",
 ];
+*/
+
 
 //推流的选项, 主要是降低延迟
 const streamingOptions=[
@@ -59,22 +118,33 @@ const recordingOptions=[
 	"-bufsize", "256k",
 	"-maxrate", "400k",
 	"-b:v", "400k",
+	"-vcodec", "libx264rgb",
+	//录制的分辨率控制
+	//"-vf", "scale=1600x900,setsar=1:1",
 	//"-crf", "0",
 	//"test.mp4"
 ];
 const generalOptions=["-y",];
 //order 只有两个, 摄像头和屏幕
 function buildParams(order, targetUrl, recordName){
+	
+	var inputOption= process.platform in allOptions ? allOptions[process.platform] : null;
+	if(inputOption == null){
+		//不支持的操作系统类型 目前支持windows/mac/linux 
+		console.log("不支持的操作系统类型 : ",process.platform);
+		return ;
+	}
+
 	if(targetUrl==null || recordName == null){
 		return [];
 	}
 	var result=[];
 	if(order==1){
-		result= generalOptions.concat(inputOptions1);
+		result= generalOptions.concat(inputOption["camera"]);
 	}else if(order==2){
-		result= generalOptions.concat(inputOptions2);
+		result= generalOptions.concat(inputOption["screen1"]);
 	}else {
-		result= generalOptions.concat(inputOptions3);
+		result= generalOptions.concat(inputOption["screen2"]);
 	}
 	result=result.concat(streamingOptions);
 	result=result.concat(codecOptions);
