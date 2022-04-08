@@ -24,10 +24,10 @@ const allOptions= {
 	"win32":{
 		"camera":[
 			"-f", "dshow",
-			"-framerate", "15",
-			"-s", "1280x720",
 			//这个需要使用探测到的设备
-			"-i", "Chinoy USB2.0 Camera",
+			"-i", "video=Chicony USB2.0 Camera",
+			"-r", "15",
+			"-s", "1280x720",
 		],
 		"screen1":[
 			"-f", "gdigrab",
@@ -115,10 +115,14 @@ const outputOptions=[
 ];
 const recordingOptions=[
 	"-f", "mp4",
+	"-vcodec", "libx264rgb",
+
 	"-bufsize", "256k",
 	"-maxrate", "400k",
 	"-b:v", "400k",
-	"-vcodec", "libx264rgb",
+	"-preset", "ultrafast",
+	"-tune", "zerolatency",
+
 	//录制的分辨率控制
 	//"-vf", "scale=1600x900,setsar=1:1",
 	//"-crf", "0",
@@ -160,6 +164,21 @@ function buildParams(order, targetUrl, recordName){
 	if(order != 1 ){
 		result.push("-crf");
 		result.push("0");
+		//result.push("-qp");
+		//result.push("0");
+	}else{
+		/*
+	    result.push("-bufsize");
+		result.push( "256k");
+	    result.push("-maxrate");
+		result.push( "400k");
+	    result.push("-b:v");
+		result.push( "400k");
+		result.push("-preset");
+		result.push("ultrafast");
+		result.push("-tune");
+		result.push("zerolatency");
+		*/
 	}
 	result.push(recordName);
 	
@@ -168,14 +187,15 @@ function buildParams(order, targetUrl, recordName){
 
 const process1 = spawn(
   ffmpeg,
-  buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
+  //buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
+  buildParams(1,"rtsp://119.3.244.32:20163/live/test3","camera.mp4")
 );
 process1.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 
 const process2 = spawn(
   ffmpeg,
-  buildParams(2,"rtsp://172.28.32.13/live/test4","screen1.mp4")
+  buildParams(2,"rtsp://119.3.244.32:20163/live/test4","screen1.mp4")
 );
 process2.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
@@ -183,35 +203,17 @@ process2.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 const process3 = spawn(
   ffmpeg,
-  buildParams(3,"rtsp://172.28.32.13/live/test5","screen2.mp4")
+  buildParams(3,"rtsp://119.3.244.32:20163/live/test5","screen2.mp4")
 );
 process3.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 
-//const stream = process.stdout;
-
-	/*
-stream.on('data', chunk => {
-	console.log(chunk.toString('utf8'));
-  const base64 = chunk.toString('base64');
-  const data = `data:image/png;base64,${base64}`;
-
-  const image = new Image();
-  image.src = data;
-  ctx.drawImage(image, 0, 0);
-});
-  */
-
 /*
-const file = createWriteStream('capture.flv');
-stream.pipe(file);
-
-stream.on('data', chunk => {
-  const base64 = chunk.toString('base64');
-  const data = `data:image/png;base64,${base64}`;
-
-  const image = new Image();
-  image.src = data;
-  ctx.drawImage(image, 0, 0);
-});
+process.on("SIGINT", function(){
+	process1.kill('SIGTERM');
+	process2.kill('SIGTERM');
+	process3.kill('SIGTERM');
+})
 */
+
+
