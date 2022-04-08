@@ -151,6 +151,15 @@ function buildParams(order, targetUrl, recordName){
 		result= generalOptions.concat(inputOption["screen2"]);
 	}
 	result=result.concat(streamingOptions);
+	//摄像头的码率限制一下
+	if(order == 1){
+	    result.push("-bufsize");
+		result.push( "4000k");
+	    result.push("-maxrate");
+		result.push( "4000k");
+	    result.push("-b:v");
+		result.push( "4000k");
+	}
 	result=result.concat(codecOptions);
 	result=result.concat(outputOptions);
 
