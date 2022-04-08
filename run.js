@@ -115,13 +115,13 @@ const outputOptions=[
 ];
 const recordingOptions=[
 	"-f", "mp4",
-	"-vcodec", "libx264rgb",
+	//"-vcodec", "libx264rgb",
 
-	"-bufsize", "256k",
-	"-maxrate", "400k",
-	"-b:v", "400k",
-	"-preset", "ultrafast",
-	"-tune", "zerolatency",
+	//"-bufsize", "1M",
+	//"-maxrate", "1M",
+	//"-b:v", "1M",
+	//"-preset", "ultrafast",
+	//"-tune", "zerolatency",
 
 	//录制的分辨率控制
 	//"-vf", "scale=1600x900,setsar=1:1",
@@ -162,23 +162,35 @@ function buildParams(order, targetUrl, recordName){
 	//摄像头加上-crf 选项 录制非常大(60M/s)(Linux 上测试), 屏幕不加crf选项, 录制非常差(完全花屏)
 	//如果不是摄像头就加上这个选项
 	if(order != 1 ){
+
+	    result.push("-bufsize");
+		result.push( "2M");
+	    result.push("-maxrate");
+		result.push( "1M");
+	    result.push("-b:v");
+		result.push( "800k");
+
+		result.push("-preset");
+		result.push("superfast");
+
 		result.push("-crf");
-		result.push("0");
+		result.push("18");
 		//result.push("-qp");
 		//result.push("0");
 	}else{
-		/*
+		
 	    result.push("-bufsize");
 		result.push( "256k");
 	    result.push("-maxrate");
 		result.push( "400k");
 	    result.push("-b:v");
 		result.push( "400k");
+
 		result.push("-preset");
-		result.push("ultrafast");
+		result.push("superfast");
 		result.push("-tune");
 		result.push("zerolatency");
-		*/
+		
 	}
 	result.push(recordName);
 	
