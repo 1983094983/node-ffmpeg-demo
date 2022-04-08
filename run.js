@@ -180,11 +180,11 @@ function buildParams(order, targetUrl, recordName){
 	}else{
 		
 	    result.push("-bufsize");
-		result.push( "256k");
+		result.push( "384k");
 	    result.push("-maxrate");
-		result.push( "400k");
+		result.push( "600k");
 	    result.push("-b:v");
-		result.push( "400k");
+		result.push( "600k");
 
 		result.push("-preset");
 		result.push("superfast");
