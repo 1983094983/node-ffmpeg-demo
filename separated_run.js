@@ -13,7 +13,6 @@ const codecOptions=[
 	"-acodec", "aac",
 	"-vcodec", "libx264rgb",
 "-bufsize", "0",
-	"-rtbufsize", "1000k",
 ];
 //跨平台的处理
 //这里的键 的定义方法
@@ -99,7 +98,8 @@ const recordingOptions=[
 	//"-crf", "0",
 	//"test.mp4"
 ];
-const generalOptions=["-y",];
+	
+const generalOptions=["-y","-rtbufsize", "50M",];
 
 
 //推流参数
@@ -183,6 +183,47 @@ function buildRecordParams(order  , recordName){
 	return result;
 }
 
+function buildSingleProcessStreamAndRecordParams(order , targetUrl , recordName){
+		
+	var inputOption= process.platform in allOptions ? allOptions[process.platform] : null;
+	if(inputOption == null){
+		//不支持的操作系统类型 目前支持windows/mac/linux 
+		console.log("不支持的操作系统类型 : ",process.platform);
+		return ;
+	}
+
+	if(targetUrl==null || recordName == null){
+		return [];
+	}
+	var result=[];
+	if(order==1){
+		result= generalOptions.concat(inputOption["camera"]);
+	}else if(order==2){
+		result= generalOptions.concat(inputOption["screen1"]);
+	}else {
+		result= generalOptions.concat(inputOption["screen2"]);
+	}
+	result=result.concat(streamingOptions);
+	result=result.concat(codecOptions);
+	result=result.concat(outputOptions);
+	result.push("-crf");
+	result.push("34");
+	//url
+	result.push(targetUrl);
+
+	result=result.concat(recordingOptions);
+	
+	//摄像头加上-crf 选项 录制非常大(60M/s)(Linux 上测试), 屏幕不加crf选项, 录制非常差(完全花屏)
+	//如果不是摄像头就加上这个选项
+	result.push("-crf");
+	result.push("38");
+	result.push(recordName);
+	
+	return result;
+}
+
+
+
 
 class ffmpegStream{
     //TODO 如果要实现分辨率的设置, 需要修改部分内容, 将分辨率作为参数在这里传入, 或者用枚举进行选择
@@ -218,7 +259,10 @@ class ffmpegStream{
 const process11 = spawn(
 	ffmpeg,
 	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
-	buildStreamParams(1,"rtsp://119.3.244.32:20163/live/test3")
+	// buildStreamParams(1,"rtsp://119.3.244.32:20163/live/test3").concat(buildRecordParams(1,"camera.mp4"))
+	//摄像头只能在一个进程里面访问， 两个进程访问显示占用
+	buildSingleProcessStreamAndRecordParams(1,"rtsp://119.3.244.32:20163/live/test3","camera.mp4")
+	// buildStreamParams(1,"rtsp://119.3.244.32:20163/live/test3")
 );
 process11.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
   
@@ -240,13 +284,13 @@ process31.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 
 
-const process12 = spawn(
-	ffmpeg,
-	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
-	buildRecordParams(1,"camera.mp4")
-);
-console.log(buildRecordParams(1,"camera.mp4"));
-process12.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
+// const process12 = spawn(
+// 	ffmpeg,
+// 	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
+// 	buildRecordParams(1,"camera.mp4")
+// );
+// console.log(buildRecordParams(1,"camera.mp4"));
+// process12.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 const process22 = spawn(
 	ffmpeg,
@@ -270,9 +314,9 @@ setInterval(function(){
 	process31.stdin.setEncoding('utf8');
 	process31.stdin.write('q\n');
 
-	//record
-	process12.stdin.setEncoding('utf8');
-	process12.stdin.write('q\n');
+	// record
+	// process12.stdin.setEncoding('utf8');
+	// process12.stdin.write('q\n');
 
 	process22.stdin.setEncoding('utf8');
 	process22.stdin.write('q\n');
