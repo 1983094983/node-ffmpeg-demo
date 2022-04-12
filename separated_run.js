@@ -106,24 +106,14 @@ const generalOptions=["-y","-rtbufsize", "50M",];
 //order 只有两个, 摄像头和屏幕
 // function buildStreamParams(order : Number , targetUrl : string){
 function buildStreamParams(order , targetUrl ){
-	
-	var inputOption= process.platform in allOptions ? allOptions[process.platform] : null;
-	if(inputOption == null){
-		//不支持的操作系统类型 目前支持windows/mac/linux 
-		console.log("不支持的操作系统类型 : ",process.platform);
-		return [] ;
-	}
 
 	if(targetUrl==null){
 		return [];
 	}
-	var result=[];
-	if(order==1){
-		result= generalOptions.concat(inputOption["camera"]);
-	}else if(order==2){
-		result= generalOptions.concat(inputOption["screen1"]);
-	}else {
-		result= generalOptions.concat(inputOption["screen2"]);
+	var result=buildSourceParams(order);
+	if(!result){
+		//系统类型不支持， windows/mac/linux
+		return result;
 	}
 	result=result.concat(streamingOptions);
 	
@@ -132,7 +122,6 @@ function buildStreamParams(order , targetUrl ){
 	result .push("-crf");
 	//视频质量损失  传18 是无损
 	result.push("38");
-	
 	result=result.concat(outputOptions);
 
 	//url
@@ -147,30 +136,15 @@ function buildStreamParams(order , targetUrl ){
 // 录制的参数
 function buildRecordParams(order  , recordName){
 		
-	var inputOption= process.platform in allOptions ? allOptions[process.platform] : null;
-	if(inputOption == null){
-		//不支持的操作系统类型 目前支持windows/mac/linux 
-		console.log("不支持的操作系统类型 : ",process.platform);
-		return [] ;
-	}
-
 	if(recordName==null){
 		return [];
 	}
-	var result=[];
-	if(order==1){
-		result= generalOptions.concat(inputOption["camera"]);
-	}else if(order==2){
-		result= generalOptions.concat(inputOption["screen1"]);
-	}else {
-		result= generalOptions.concat(inputOption["screen2"]);
+	var result=buildSourceParams(order);
+	if(!result){
+		//系统类型不支持， windows/mac/linux
+		return result;
 	}
-	 
 	result=result.concat(codecOptions);
-	// result=result.concat(outputOptions);
-
-	//url
-	// result.push(targetUrl);
 
 	result=result.concat(recordingOptions);
 	
@@ -183,31 +157,27 @@ function buildRecordParams(order  , recordName){
 	return result;
 }
 
+
+/**
+ * 摄像头只能用一个进程进行推流和录制，两个进程会显示被占用， 这个函数是用作推流和录制
+ * @returns params
+ */
 function buildSingleProcessStreamAndRecordParams(order , targetUrl , recordName){
 		
-	var inputOption= process.platform in allOptions ? allOptions[process.platform] : null;
-	if(inputOption == null){
-		//不支持的操作系统类型 目前支持windows/mac/linux 
-		console.log("不支持的操作系统类型 : ",process.platform);
-		return ;
-	}
 
 	if(targetUrl==null || recordName == null){
 		return [];
 	}
-	var result=[];
-	if(order==1){
-		result= generalOptions.concat(inputOption["camera"]);
-	}else if(order==2){
-		result= generalOptions.concat(inputOption["screen1"]);
-	}else {
-		result= generalOptions.concat(inputOption["screen2"]);
+	var result=buildSourceParams(order);
+	if(!result){
+		//系统类型不支持， windows/mac/linux
+		return result;
 	}
 	result=result.concat(streamingOptions);
 	result=result.concat(codecOptions);
 	result=result.concat(outputOptions);
 	result.push("-crf");
-	result.push("34");
+	result.push("38");
 	//url
 	result.push(targetUrl);
 
@@ -222,6 +192,25 @@ function buildSingleProcessStreamAndRecordParams(order , targetUrl , recordName)
 	return result;
 }
 
+/**
+ * 构建推流的源的params
+ * @returns 
+ */
+function buildSourceParams(order){
+	var inputOption= process.platform in allOptions ? allOptions[process.platform] : null;
+	if(inputOption == null){
+		console.error("不支持的操作系统类型 : ",process.platform);
+		return [];
+	}
+	if(order==1){
+		result= generalOptions.concat(inputOption["camera"]);
+	}else if(order==2){
+		result= generalOptions.concat(inputOption["screen1"]);
+	}else {
+		result= generalOptions.concat(inputOption["screen2"]);
+	}
+	return result;
+}
 
 
 
@@ -258,11 +247,7 @@ class ffmpegStream{
 
 const process11 = spawn(
 	ffmpeg,
-	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
-	// buildStreamParams(1,"rtsp://119.3.244.32:20163/live/test3").concat(buildRecordParams(1,"camera.mp4"))
-	//摄像头只能在一个进程里面访问， 两个进程访问显示占用
 	buildSingleProcessStreamAndRecordParams(1,"rtsp://119.3.244.32:20163/live/test3","camera.mp4")
-	// buildStreamParams(1,"rtsp://119.3.244.32:20163/live/test3")
 );
 process11.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
   
@@ -281,16 +266,6 @@ const process31 = spawn(
   );
 process31.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
-
-
-
-// const process12 = spawn(
-// 	ffmpeg,
-// 	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
-// 	buildRecordParams(1,"camera.mp4")
-// );
-// console.log(buildRecordParams(1,"camera.mp4"));
-// process12.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 const process22 = spawn(
 	ffmpeg,
@@ -313,10 +288,6 @@ setInterval(function(){
 
 	process31.stdin.setEncoding('utf8');
 	process31.stdin.write('q\n');
-
-	// record
-	// process12.stdin.setEncoding('utf8');
-	// process12.stdin.write('q\n');
 
 	process22.stdin.setEncoding('utf8');
 	process22.stdin.write('q\n');
