@@ -99,7 +99,7 @@ const recordingOptions=[
 	//"test.mp4"
 ];
 	
-const generalOptions=["-y","-rtbufsize", "50M",];
+const generalOptions=["-y","-v", "error", "-rtbufsize", "50M",];
 
 
 //推流参数
@@ -192,6 +192,44 @@ function buildSingleProcessStreamAndRecordParams(order , targetUrl , recordName)
 	return result;
 }
 
+//ffmpeg 摄像头推流（从模板构建参数）
+function buildParamsFromTemplate(order, targetUrl, recordName){
+	var params = [];
+	params = generalOptions.concat(buildSourceParams(order))
+	// reutrn
+	return params.concat([
+		// "-y",
+		// "-y","-v","error",
+		// "-rtbufsize","50M",
+		// "-f","dshow",
+		// "-i","video=Chicony USB2.0 Camera",
+		// "-r","15",
+		// "-s","1280x720",
+		"-fflags","nobuffer",
+		"-analyzeduration","0",
+		"-probesize","32",
+		"-tune","zerolatency",
+		"-max_muxing_queue_size","0",
+		"-sc_threshold","499",
+		"-preset","ultrafast",
+		"-vcodec","libx264rgb",
+		"-bufsize","0",
+		"-filter_complex","split [main][tmp]",
+		"-map",
+		"[main]",
+		"-crf","34",
+		"-rtsp_transport","tcp",
+		"-f","rtsp",
+		targetUrl,
+		"-map","[tmp]",
+		"-crf","34",
+		"-preset","ultrafast",
+		"-f","mp4",
+		recordName
+	]);
+	// ffmpeg -y  -v error -rtbufsize 50M  -y -f dshow  -i video="Chicony USB2.0 Camera"  -r 15 -s 1280x720  -fflags nobuffer -analyzeduration 0 -probesize 32 -tune zerolatency   -max_muxing_queue_size 0 -sc_threshold 499 -preset ultrafast  -vcodec libx264rgb -bufsize 0                                          -filter_complex "split [main][tmp]"   -map "[main]" -crf 38 -rtsp_transport tcp -f rtsp rtsp://119.3.244.32:20163/live/test3 -map "[tmp]" -crf 38 -preset ultrafast  -f mp4 camera.mp4
+}
+
 /**
  * 构建推流的源的params
  * @returns 
@@ -244,17 +282,25 @@ class ffmpegStream{
 
 
 
-
+//摄像头一个进程推流
+// const process11 = spawn(
+// 	ffmpeg,
+// 	buildSingleProcessStreamAndRecordParams(1,"rtsp://119.3.244.32:20163/live/test3","camera.mp4")
+// );
+// process11.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 const process11 = spawn(
 	ffmpeg,
-	buildSingleProcessStreamAndRecordParams(1,"rtsp://119.3.244.32:20163/live/test3","camera.mp4")
+	//从模板构建参数（摄像头）
+	buildParamsFromTemplate(1, "rtsp://119.3.244.32:20163/live/test3","camera.mp4")
 );
+// console.log(buildParamsFromTemplate("rtsp://119.3.244.32:20163/live/test3","camera.mp4").join(" "))
 process11.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
+
   
   
 const process21 = spawn(
 	ffmpeg,
-	buildStreamParams(2,"rtsp://119.3.244.32:20163/live/test4")
+	buildParamsFromTemplate(2,"rtsp://119.3.244.32:20163/live/test4","screen1.mp4")
   );
 process21.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
@@ -262,21 +308,19 @@ process21.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
   
 const process31 = spawn(
 	ffmpeg,
-	buildStreamParams(3,"rtsp://119.3.244.32:20163/live/test5")
+	buildParamsFromTemplate(3,"rtsp://119.3.244.32:20163/live/test5","screen2.mp4")
   );
 process31.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
 
-const process22 = spawn(
-	ffmpeg,
-	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
-	buildRecordParams(2,"screen1.mp4")
-);
-const process32 = spawn(
-	ffmpeg,
-	//buildParams(1,"rtsp://172.28.32.13/live/test3","camera.mp4")
-	buildRecordParams(3,"screen2.mp4")
-);
+// const process22 = spawn(
+// 	ffmpeg,
+// 	buildRecordParams(2,"screen1.mp4")
+// );
+// const process32 = spawn(
+// 	ffmpeg,
+// 	buildRecordParams(3,"screen2.mp4")
+// );
 
 //终止
 setInterval(function(){
@@ -289,9 +333,9 @@ setInterval(function(){
 	process31.stdin.setEncoding('utf8');
 	process31.stdin.write('q\n');
 
-	process22.stdin.setEncoding('utf8');
-	process22.stdin.write('q\n');
+	// process22.stdin.setEncoding('utf8');
+	// process22.stdin.write('q\n');
 
-	process32.stdin.setEncoding('utf8');
-	process32.stdin.write('q\n');
+	// process32.stdin.setEncoding('utf8');
+	// process32.stdin.write('q\n');
 } , 1000 * 60);
