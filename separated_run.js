@@ -223,6 +223,7 @@ function buildParamsFromTemplate(order, targetUrl, recordName){
 		targetUrl,
 		"-map","[tmp]",
 		"-crf","34",
+		//这个参数一定要,不用这个参数1.1G内存,用这个参数350M 内存
 		"-preset","ultrafast",
 		"-f","mp4",
 		recordName
@@ -255,18 +256,15 @@ function buildSourceParams(order){
 class ffmpegStream{
     //TODO 如果要实现分辨率的设置, 需要修改部分内容, 将分辨率作为参数在这里传入, 或者用枚举进行选择
 	//推流子进程
-    ffmpegStreamProcess;
-	//录制子进程
-	ffmpegRecordProcess;
+    ffmpegProcess;
 
     order ;
     streamUrl ;
     recordName ;
     execFfmpeg(order  , streamUrl  , recordName ){
-        const ffmpegStreamProcess = spawn(ffmpeg, buildStreamParams(order, streamUrl));
-        this.ffmpegStreamProcess = ffmpegStreamProcess;
-		const ffmpegRecordProcess = spawn(ffmpeg, buildRecordParams(order , recordName));
-		this.ffmpegRecordProcess = ffmpegRecordProcess;
+        const ffmpegProcess = spawn(ffmpeg, buildParamsFromTemplate(order, streamUrl, recordName));
+
+        this.ffmpegProcess = ffmpegProcess;
 		
         this.order = order;
         this.streamUrl = streamUrl;
@@ -276,6 +274,9 @@ class ffmpegStream{
 
     stop(){
         //TODO 停止ffmpeg (windows中可能需要处理ffmpeg进程的关闭, 使用SIGINT 会直接杀死进程, 不能写入mp4文件的 moov atom数据导致文件损坏)
+		this.ffmpegProcess.stdin.setEncoding('utf8');
+		this.ffmpegProcess.stdin.write('q\n');
+		
     }
 }
 
@@ -293,7 +294,6 @@ const process11 = spawn(
 	//从模板构建参数（摄像头）
 	buildParamsFromTemplate(1, "rtsp://119.3.244.32:20163/live/test3","camera.mp4")
 );
-// console.log(buildParamsFromTemplate("rtsp://119.3.244.32:20163/live/test3","camera.mp4").join(" "))
 process11.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 
   
@@ -323,7 +323,15 @@ process31.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
 // );
 
 //终止
+
+//ffmpeg1=  new ffmpegStream().execFfmpeg(1,"rtsp://127.0.0.1/live/test3","camera.mp4");
+//ffmpeg2=  new ffmpegStream().execFfmpeg(2,"rtsp://127.0.0.1/live/test4","screen1.mp4");
+//ffmpeg3=  new ffmpegStream().execFfmpeg(3,"rtsp://127.0.0.1/live/test5","screen2.mp4");
 setInterval(function(){
+	//ffmpeg1.stop();
+	//ffmpeg2.stop();
+	//ffmpeg3.stop();
+	
 	process11.stdin.setEncoding('utf8');
 	process11.stdin.write('q\n');
 
