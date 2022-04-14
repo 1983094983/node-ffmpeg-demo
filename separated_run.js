@@ -195,7 +195,7 @@ function buildSingleProcessStreamAndRecordParams(order , targetUrl , recordName)
 //ffmpeg 摄像头推流（从模板构建参数）
 function buildParamsFromTemplate(order, targetUrl, recordName){
 	var params = [];
-	params = generalOptions.concat(buildSourceParams(order))
+	params = buildSourceParams(order);
 	// reutrn
 	return params.concat([
 		// "-y",
@@ -210,19 +210,19 @@ function buildParamsFromTemplate(order, targetUrl, recordName){
 		"-probesize","32",
 		"-tune","zerolatency",
 		"-max_muxing_queue_size","0",
-		"-sc_threshold","499",
+		// "-sc_threshold","499",
 		"-preset","ultrafast",
-		"-vcodec","libx264rgb",
+		"-vcodec","libx264",
 		"-bufsize","0",
 		"-filter_complex","split [main][tmp]",
 		"-map", "[main]",
-		"-b:v","500k",
+		"-b:v","800k",
 		"-maxrate","1500k",
 		"-rtsp_transport","tcp",
 		"-f","rtsp",
 		targetUrl,
 		"-map","[tmp]",
-		"-b:v","500k",
+		"-b:v","800k",
 		"-maxrate","1500k",
 		//这个参数一定要,不用这个参数1.1G内存,用这个参数350M 内存
 		"-preset","ultrafast",
@@ -349,4 +349,4 @@ setInterval(function(){
 
 	// process32.stdin.setEncoding('utf8');
 	// process32.stdin.write('q\n');
-} , 1000 * 600);
+} , 1000 * 120);
