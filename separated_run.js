@@ -215,14 +215,15 @@ function buildParamsFromTemplate(order, targetUrl, recordName){
 		"-vcodec","libx264rgb",
 		"-bufsize","0",
 		"-filter_complex","split [main][tmp]",
-		"-map",
-		"[main]",
-		"-crf","34",
+		"-map", "[main]",
+		"-b:v","500k",
+		"-maxrate","1500k",
 		"-rtsp_transport","tcp",
 		"-f","rtsp",
 		targetUrl,
 		"-map","[tmp]",
-		"-crf","34",
+		"-b:v","500k",
+		"-maxrate","1500k",
 		//这个参数一定要,不用这个参数1.1G内存,用这个参数350M 内存
 		"-preset","ultrafast",
 		"-f","mp4",
@@ -289,6 +290,8 @@ class ffmpegStream{
 // 	buildSingleProcessStreamAndRecordParams(1,"rtsp://119.3.244.32:20163/live/test3","camera.mp4")
 // );
 // process11.stderr.on('data', chunk => { console.log(chunk.toString('utf8')); });
+console.log(buildParamsFromTemplate(2,"rtsp://119.3.244.32:20163/live/test4","screen1.mp4").join(" "));
+
 const process11 = spawn(
 	ffmpeg,
 	//从模板构建参数（摄像头）
@@ -346,4 +349,4 @@ setInterval(function(){
 
 	// process32.stdin.setEncoding('utf8');
 	// process32.stdin.write('q\n');
-} , 1000 * 60);
+} , 1000 * 600);
